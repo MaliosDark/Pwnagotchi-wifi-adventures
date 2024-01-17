@@ -1,12 +1,12 @@
 
 <p align="center">
-  <img src="#" alt="Pwnagotchi WiFi Adventures">
+  <img src="https://raw.githubusercontent.com/MaliosDark/Pwnagotchi-wifi-adventures/main/image.jpg" alt="Pwnagotchi WiFi Adventures">
 </p>
 
 # WiFi Adventures with Pwnagotchi
 
 ## Description
-**WiFi Adventures with Pwnagotchi** is a plugin designed to add a fun and adventurous aspect to your Pwnagotchi experience. The plugin allows your Pwnagotchi to embark on various WiFi adventures and collect achievements along the way. Whether it's shaking hands with access points or engaging in pixel parades, your Pwnagotchi is on a quest for WiFi glory!
+**WiFi Adventures with Pwnagotchi** is a plugin designed to add a fun and adventurous aspect to your Pwnagotchi experience. The plugin allows your Pwnagotchi to go on various WiFi adventures and collect achievements along the way. Whether it's shaking hands with access points or engaging in pixel parades, your Pwnagotchi is on a quest for WiFi glory!
 
 ## Adventures
 
@@ -14,7 +14,7 @@
 **Before Starting:**
 - Ensure that capturing handshakes is legal in your location.
 - Be cautious of potential legal implications regarding WiFi network interactions.
-- 
+ 
 **Objective:** Collect handshakes from access points.
 
 **How to Achieve:** Allow your Pwnagotchi to capture handshakes by being in the vicinity of WiFi networks. The progress is tracked, and once you reach the daily quest target, you'll earn the title of "WiFi Whisperer."
@@ -89,6 +89,8 @@ This plugin is at version `{__version__}`.
 ## Credits
 - **Main Idea:**[LegendEvent](https://github.com/LegendEvent/pwnagotchi-custom-plugins/)
 - **License:** GPL3
+
+
 Feel free to contribute and enhance the WiFi adventures of your Pwnagotchi! 🚀
 
 
