@@ -29,12 +29,12 @@ class AdventureType:
     PIXEL_PARADE = "pixel_parade"
     DATA_DAZZLE = "data_dazzle"
 
-def choose_random_adventure():
-    return random.choice([AdventureType.HANDSHAKE, AdventureType.NEW_NETWORK, AdventureType.PACKET_PARTY, AdventureType.PIXEL_PARADE, AdventureType.DATA_DAZZLE])
+def choose_random_adventure(self):
+        return random.choice([AdventureType.HANDSHAKE, AdventureType.NEW_NETWORK, AdventureType.PACKET_PARTY, AdventureType.PIXEL_PARADE, AdventureType.DATA_DAZZLE])
 
 class FunAchievements(plugins.Plugin):
     __author__ = 'https://github.com/MaliosDark/'
-    __version__ = '1.2.9'
+    __version__ = '1.2.97'
     __license__ = 'GPL3'
     __description__ = 'Taking Pwnagotchi on WiFi adventures and collect fun achievements.'
     __defaults__ = {
@@ -85,6 +85,9 @@ class FunAchievements(plugins.Plugin):
                 self.current_adventure = data.get('current_adventure', choose_random_adventure())
         logging.info(f"[FunAchievements] Loaded data from JSON: {data}")
 
+    def choose_random_adventure(self):
+        return random.choice([AdventureType.HANDSHAKE, AdventureType.NEW_NETWORK, AdventureType.PACKET_PARTY, AdventureType.PIXEL_PARADE, AdventureType.DATA_DAZZLE])
+
     def on_loaded(self):
         logging.info("[FunAchievements] plugin loaded")
 
@@ -92,7 +95,7 @@ class FunAchievements(plugins.Plugin):
         title = self.get_title_based_on_achievements()
         label = self.get_label_based_on_adventure()
 
-        ui.add_element('showFunAchievements', LabeledValue(color=BLACK, label=label, value=f"{self.handshake_count}/{self.daily_quest_target} ({title})", position=(0, 95), label_font=fonts.Medium, text_font=fonts.Medium))
+        ui.add_element('showFunAchievements', LabeledValue(color=BLACK, label=label, value=f"{self.handshake_count}/{self.daily_quest_target} ({self.get_title_based_on_achievements()})", position=(0, 95), label_font=fonts.Medium, text_font=fonts.Medium))
 
     def on_ui_update(self, ui):
         if self.ready:
@@ -129,18 +132,25 @@ class FunAchievements(plugins.Plugin):
             95: "Master of the Matrix",
             100: "Legendary Adventurer"
         }
-        
+
         # Buscar el título más alto alcanzado y actualizar el atributo 'title'
         for threshold, title in titles.items():
             if self.fun_achievement_count >= threshold:
                 self.title = title
+
+        # Si el título actual es mayor al título anterior, actualiza el título
+        if titles.get(self.fun_achievement_count, "") != self.title:
+            self.title = titles.get(self.fun_achievement_count, "")
+
+        logging.info(f"[FunAchievements] Updated title: {self.title}")
+
 
     def get_title_based_on_achievements(self):
         # Llamar a update_title para asegurarse de que el atributo 'title' esté actualizado
         self.update_title()
         
         # Retornar el título actualizado
-        return self.title or "WiFi Whisperer"
+        return self.title
 
 
     def save_to_json(self):
@@ -162,7 +172,6 @@ class FunAchievements(plugins.Plugin):
     def on_handshake(self, agent, filename, access_point, client_station):
         logging.info(f"[FunAchievements] on_handshake - Current Adventure: {self.current_adventure}, Handshake Count: {self.handshake_count}")
         
-        # Incrementa el contador de handshakes según la dificultad de la aventura actual
         difficulty_multiplier = {
             AdventureType.HANDSHAKE: 2,
             AdventureType.NEW_NETWORK: 1,  
@@ -175,8 +184,9 @@ class FunAchievements(plugins.Plugin):
         self.check_and_update_daily_quest_target()
         self.check_treasure_chest()
 
-        # Llamar a update_title después de actualizar el contador de handshakes
-        self.update_title()
+        if self.is_adventure_completed():
+            self.fun_achievement_count += 1
+            self.update_title()
 
         self.save_to_json()
 
@@ -249,14 +259,18 @@ class FunAchievements(plugins.Plugin):
             self.last_claimed = today
             self.daily_quest_target += 2
 
-            if self.is_adventure_completed():
-                self.fun_achievement_count += 1
-
             # Move the adventure update logic outside of is_adventure_completed()
             self.current_adventure = choose_random_adventure()
 
+            # Incrementar el título después de actualizar la aventura actual
+            self.update_title()
+
+            if self.is_adventure_completed():
+                self.fun_achievement_count += 1
+
         # Save changes to JSON after updating data
         self.save_to_json()
+
 
     def on_unfiltered_ap_list(self, agent):
         self.new_networks_count += 1
