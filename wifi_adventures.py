@@ -29,12 +29,9 @@ class AdventureType:
     PIXEL_PARADE = "pixel_parade"
     DATA_DAZZLE = "data_dazzle"
 
-def choose_random_adventure(self):
-        return random.choice([AdventureType.HANDSHAKE, AdventureType.NEW_NETWORK, AdventureType.PACKET_PARTY, AdventureType.PIXEL_PARADE, AdventureType.DATA_DAZZLE])
-
 class FunAchievements(plugins.Plugin):
     __author__ = 'https://github.com/MaliosDark/'
-    __version__ = '1.2.97'
+    __version__ = '1.3.0'
     __license__ = 'GPL3'
     __description__ = 'Taking Pwnagotchi on WiFi adventures and collect fun achievements.'
     __defaults__ = {
@@ -53,20 +50,20 @@ class FunAchievements(plugins.Plugin):
         self.title = ""
         self.last_claimed = None
         self.daily_quest_target = 3
-        self.current_adventure = choose_random_adventure()
+        self.current_adventure = self.choose_random_adventure()
         self.data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fun_achievements.json')
 
     def get_label_based_on_adventure(self):
         if self.current_adventure == AdventureType.NEW_NETWORK:
-            return "New Adventure: "
+            return "New Adventure:  "
         elif self.current_adventure == AdventureType.PACKET_PARTY:
-            return "Party Time: "
+            return "Party Time:  "
         elif self.current_adventure == AdventureType.PIXEL_PARADE:
-            return "Pixel Parade: "
+            return "Pixel Parade:  "
         elif self.current_adventure == AdventureType.DATA_DAZZLE:
-            return "Data Dazzle: "
+            return "Data Dazzle:  "
         else:
-            return "Mysterious Quest: "
+            return "Mysterious Quest:  "
 
     def load_from_json(self):
         logging.info('[FunAchievements] Loading data from JSON...')
@@ -82,10 +79,11 @@ class FunAchievements(plugins.Plugin):
                 self.treasure_chests_count = data.get('treasure_chests_count', 0)
                 self.daily_quest_target = data.get('daily_quest_target', 5)
                 self.last_claimed = datetime.datetime.strptime(data['last_claimed'], '%Y-%m-%d').date() if 'last_claimed' in data else None
-                self.current_adventure = data.get('current_adventure', choose_random_adventure())
+                self.current_adventure = FunAchievements.choose_random_adventure()
         logging.info(f"[FunAchievements] Loaded data from JSON: {data}")
 
-    def choose_random_adventure(self):
+    @staticmethod
+    def choose_random_adventure():
         return random.choice([AdventureType.HANDSHAKE, AdventureType.NEW_NETWORK, AdventureType.PACKET_PARTY, AdventureType.PIXEL_PARADE, AdventureType.DATA_DAZZLE])
 
     def on_loaded(self):
@@ -173,9 +171,9 @@ class FunAchievements(plugins.Plugin):
         logging.info(f"[FunAchievements] on_handshake - Current Adventure: {self.current_adventure}, Handshake Count: {self.handshake_count}")
         
         difficulty_multiplier = {
-            AdventureType.HANDSHAKE: 2,
+            AdventureType.HANDSHAKE: 1,
             AdventureType.NEW_NETWORK: 1,  
-            AdventureType.PACKET_PARTY: 1,
+            AdventureType.PACKET_PARTY: 2,
             AdventureType.PIXEL_PARADE: 2,
             AdventureType.DATA_DAZZLE: 1
         }
@@ -260,7 +258,8 @@ class FunAchievements(plugins.Plugin):
             self.daily_quest_target += 2
 
             # Move the adventure update logic outside of is_adventure_completed()
-            self.current_adventure = choose_random_adventure()
+            self.current_adventure = self.choose_random_adventure()
+
 
             # Incrementar el título después de actualizar la aventura actual
             self.update_title()
