@@ -31,7 +31,7 @@ class AdventureType:
 
 class FunAchievements(plugins.Plugin):
     __author__ = 'https://github.com/MaliosDark/'
-    __version__ = '1.3.1'
+    __version__ = '1.3.2'
     __license__ = 'GPL3'
     __description__ = 'Taking Pwnagotchi on WiFi adventures and collect fun achievements.'
     __defaults__ = {
@@ -90,17 +90,17 @@ class FunAchievements(plugins.Plugin):
         logging.info("[FunAchievements] plugin loaded")
 
     def on_ui_setup(self, ui):
-        title_label = self.get_label_based_on_adventure()
+        title_label = self.current_adventure.capitalize()
         achievement_label = f"{self.handshake_count}/{self.daily_quest_target} ({self.get_title_based_on_achievements()})"
-        status_label = f"Adventure: {self.current_adventure.capitalize()} | Difficulty: {self.daily_quest_target}"
+        status_label = f"Difficulty: {self.daily_quest_target}"
 
         ui.add_element('showFunAchievements', LabeledValue(color=BLACK, label=title_label, value=achievement_label, position=(0, 95), label_font=fonts.Medium, text_font=fonts.Medium))
-        ui.add_element('showStatus', LabeledValue(color=BLACK, label="Status: ", value=status_label, position=(0, 75), label_font=fonts.Medium, text_font=fonts.Medium))
+        ui.add_element('showStatus', LabeledValue(color=BLACK, label="", value=status_label, position=(0, 75), label_font=fonts.Medium, text_font=fonts.Medium))
 
     def on_ui_update(self, ui):
         if self.ready:
             ui.set('showFunAchievements', f"{self.handshake_count}/{self.daily_quest_target} ({self.get_title_based_on_achievements()})")
-            ui.set('showStatus', f"Adventure: {self.current_adventure.capitalize()} | Difficulty: {self.daily_quest_target}")
+            ui.set('showStatus', f"Difficulty: {self.daily_quest_target}")
 
     def on_ready(self, agent):
         _ = agent
