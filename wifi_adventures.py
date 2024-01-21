@@ -31,7 +31,7 @@ class AdventureType:
 
 class FunAchievements(plugins.Plugin):
     __author__ = 'https://github.com/MaliosDark/'
-    __version__ = '1.3.4'
+    __version__ = '1.3.5'
     __license__ = 'GPL3'
     __description__ = 'Taking Pwnagotchi on WiFi adventures and collect fun achievements.'
     __defaults__ = {
@@ -90,7 +90,7 @@ class FunAchievements(plugins.Plugin):
         logging.info("[FunAchievements] plugin loaded")
 
     def on_ui_setup(self, ui):
-        title_label = f"{self.current_adventure.capitalize()} | Dif:  {self.daily_quest_target}"
+        title_label = self.get_label_based_on_adventure()
         achievement_label = f"{self.handshake_count}/{self.daily_quest_target} ({self.get_title_based_on_achievements()})"
         ui.add_element('showFunAchievements', LabeledValue(color=BLACK, label=title_label, value=achievement_label, position=(0, 95), label_font=fonts.Medium, text_font=fonts.Medium))
 
