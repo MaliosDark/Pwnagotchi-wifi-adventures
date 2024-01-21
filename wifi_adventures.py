@@ -31,7 +31,7 @@ class AdventureType:
 
 class FunAchievements(plugins.Plugin):
     __author__ = 'https://github.com/MaliosDark/'
-    __version__ = '1.3.3'
+    __version__ = '1.3.4'
     __license__ = 'GPL3'
     __description__ = 'Taking Pwnagotchi on WiFi adventures and collect fun achievements.'
     __defaults__ = {
@@ -90,7 +90,7 @@ class FunAchievements(plugins.Plugin):
         logging.info("[FunAchievements] plugin loaded")
 
     def on_ui_setup(self, ui):
-        title_label = f"{self.current_adventure.capitalize()} | Difficulty: {self.daily_quest_target}"
+        title_label = f"{self.current_adventure.capitalize()} | Dif:  {self.daily_quest_target}"
         achievement_label = f"{self.handshake_count}/{self.daily_quest_target} ({self.get_title_based_on_achievements()})"
         ui.add_element('showFunAchievements', LabeledValue(color=BLACK, label=title_label, value=achievement_label, position=(0, 95), label_font=fonts.Medium, text_font=fonts.Medium))
 
@@ -133,17 +133,17 @@ class FunAchievements(plugins.Plugin):
         # Duplicar los puntos necesarios para cada título
         titles = {key * 2: value for key, value in titles.items()}
 
-        # Buscar el título más alto alcanzado y actualizar el atributo 'title'
-        for threshold, title in titles.items():
+        # Buscar el título más alto alcanzado
+        current_title = None
+        for threshold in sorted(titles.keys(), reverse=True):
             if self.fun_achievement_count >= threshold:
-                self.title = title
+                current_title = titles[threshold]
+                break
 
-        # Si el título actual es mayor al título anterior, actualiza el título
-        if titles.get(self.fun_achievement_count, "") != self.title:
-            self.title = titles.get(self.fun_achievement_count, "")
-
-        logging.info(f"[FunAchievements] Updated title: {self.title}")
-
+        # Actualizar el atributo 'title'
+        if current_title is not None and current_title != self.title:
+            self.title = current_title
+            logging.info(f"[FunAchievements] Updated title: {self.title}")
 
     def get_title_based_on_achievements(self):
         # Llamar a update_title para asegurarse de que el atributo 'title' esté actualizado
@@ -151,7 +151,6 @@ class FunAchievements(plugins.Plugin):
         
         # Retornar el título actualizado
         return self.title
-
 
     def save_to_json(self):
         data = {
@@ -189,7 +188,6 @@ class FunAchievements(plugins.Plugin):
             self.update_title()
 
         self.save_to_json()
-
 
     def on_packet_party(self, agent, party_count):
         if self.current_adventure == AdventureType.PACKET_PARTY:
@@ -268,7 +266,6 @@ class FunAchievements(plugins.Plugin):
 
         # Save changes to JSON after updating data
         self.save_to_json()
-
 
     def on_unfiltered_ap_list(self, agent):
         self.new_networks_count += 1
