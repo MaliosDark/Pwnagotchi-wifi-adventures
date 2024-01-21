@@ -31,7 +31,7 @@ class AdventureType:
 
 class FunAchievements(plugins.Plugin):
     __author__ = 'https://github.com/MaliosDark/'
-    __version__ = '1.3.0'
+    __version__ = '1.3.1'
     __license__ = 'GPL3'
     __description__ = 'Taking Pwnagotchi on WiFi adventures and collect fun achievements.'
     __defaults__ = {
@@ -90,14 +90,17 @@ class FunAchievements(plugins.Plugin):
         logging.info("[FunAchievements] plugin loaded")
 
     def on_ui_setup(self, ui):
-        title = self.get_title_based_on_achievements()
-        label = self.get_label_based_on_adventure()
+        title_label = self.get_label_based_on_adventure()
+        achievement_label = f"{self.handshake_count}/{self.daily_quest_target} ({self.get_title_based_on_achievements()})"
+        status_label = f"Adventure: {self.current_adventure.capitalize()} | Difficulty: {self.daily_quest_target}"
 
-        ui.add_element('showFunAchievements', LabeledValue(color=BLACK, label=label, value=f"{self.handshake_count}/{self.daily_quest_target} ({self.get_title_based_on_achievements()})", position=(0, 95), label_font=fonts.Medium, text_font=fonts.Medium))
+        ui.add_element('showFunAchievements', LabeledValue(color=BLACK, label=title_label, value=achievement_label, position=(0, 95), label_font=fonts.Medium, text_font=fonts.Medium))
+        ui.add_element('showStatus', LabeledValue(color=BLACK, label="Status: ", value=status_label, position=(0, 75), label_font=fonts.Medium, text_font=fonts.Medium))
 
     def on_ui_update(self, ui):
         if self.ready:
             ui.set('showFunAchievements', f"{self.handshake_count}/{self.daily_quest_target} ({self.get_title_based_on_achievements()})")
+            ui.set('showStatus', f"Adventure: {self.current_adventure.capitalize()} | Difficulty: {self.daily_quest_target}")
 
     def on_ready(self, agent):
         _ = agent
@@ -110,26 +113,29 @@ class FunAchievements(plugins.Plugin):
     def update_title(self):
         titles = {
             0: "WiFi Whisperer",
-            2: "Signal Maestro",
-            4: "Adventure Artisan",
-            8: "Byte Buccaneer",
-            10: "Data Dynamo",
-            12: "Network Nomad",
-            14: "Binary Bard",
-            16: "Code Commander",
-            20: "Cyber Corsair",
-            24: "Protocol Pioneer",
-            30: "Bit Bazaar",
-            34: "Digital Druid",
-            40: "Epic Explorer",
-            60: "System Sorcerer",
-            65: "Crypto Crusader",
-            75: "Digital Dynamo",
-            80: "Cyber Celestial",
-            90: "Bitlord of the Bits",
-            95: "Master of the Matrix",
-            100: "Legendary Adventurer"
+            4: "Signal Maestro",
+            8: "Adventure Artisan",
+            16: "Byte Buccaneer",
+            20: "Data Dynamo",
+            24: "Network Nomad",
+            28: "Binary Bard",
+            32: "Code Commander",
+            40: "Cyber Corsair",
+            48: "Protocol Pioneer",
+            60: "Bit Bazaar",
+            68: "Digital Druid",
+            80: "Epic Explorer",
+            120: "System Sorcerer",
+            130: "Crypto Crusader",
+            150: "Digital Dynamo",
+            160: "Cyber Celestial",
+            180: "Bitlord of the Bits",
+            190: "Master of the Matrix",
+            200: "Legendary Adventurer"
         }
+
+        # Duplicar los puntos necesarios para cada título
+        titles = {key * 2: value for key, value in titles.items()}
 
         # Buscar el título más alto alcanzado y actualizar el atributo 'title'
         for threshold, title in titles.items():
@@ -174,7 +180,7 @@ class FunAchievements(plugins.Plugin):
             AdventureType.HANDSHAKE: 1,
             AdventureType.NEW_NETWORK: 1,  
             AdventureType.PACKET_PARTY: 2,
-            AdventureType.PIXEL_PARADE: 2,
+            AdventureType.PIXEL_PARADE: 1,
             AdventureType.DATA_DAZZLE: 1
         }
 
