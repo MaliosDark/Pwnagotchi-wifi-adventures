@@ -38,7 +38,7 @@ class AdventureType:
 
 class FunAchievements(plugins.Plugin):
     __author__ = 'https://github.com/MaliosDark/'
-    __version__ = '1.3.8'
+    __version__ = '1.3.9'
     __license__ = 'GPL3'
     __description__ = 'Taking Pwnagotchi on WiFi adventures and collect fun achievements.'
     __defaults__ = {
@@ -183,7 +183,17 @@ class FunAchievements(plugins.Plugin):
         
         payload = {
             "adventure": adventure,
-            "status": status
+            "status": status,
+            'handshake_count': self.handshake_count,
+            'new_networks_count': self.new_networks_count,
+            'packet_party_count': self.packet_party_count,
+            'pixel_parade_count': self.pixel_parade_count,
+            'data_dazzle_count': self.data_dazzle_count,
+            'treasure_chests_count': self.treasure_chests_count,
+            'last_claimed': self.last_claimed.strftime('%Y-%m-%d') if self.last_claimed else None,
+            'daily_quest_target': self.daily_quest_target,
+            'current_adventure': self.current_adventure,
+            'fun_achievement_count': self.fun_achievement_count
         }
 
         try:
