@@ -15,13 +15,15 @@ import logging
 import os
 import subprocess
 from threading import Timer
+import pwnagotchi.plugins as plugins
+import pwnagotchi.ui.fonts as fonts
 from pwnagotchi.ui.components import LabeledValue
 from pwnagotchi.ui.view import BLACK
-import pwnagotchi.ui.fonts as fonts
-import pwnagotchi.plugins as plugins
 import datetime
 import json
 import random
+import re
+
 
 class AdventureType:
     HANDSHAKE = "handshake"
@@ -33,7 +35,7 @@ class AdventureType:
 
 class FunAchievements(plugins.Plugin):
     __author__ = 'https://github.com/MaliosDark/'
-    __version__ = '1.3.6'
+    __version__ = '1.3.7'
     __license__ = 'GPL3'
     __description__ = 'Taking Pwnagotchi on WiFi adventures and collect fun achievements.'
     __defaults__ = {
@@ -180,7 +182,8 @@ class FunAchievements(plugins.Plugin):
             AdventureType.NEW_NETWORK: 1,  
             AdventureType.PACKET_PARTY: 2,
             AdventureType.PIXEL_PARADE: 1,
-            AdventureType.DATA_DAZZLE: 1
+            AdventureType.DATA_DAZZLE: 1,
+            AdventureType.SPEEDY_SCAN: 1
         }
 
         self.handshake_count += difficulty_multiplier.get(self.current_adventure, 1)
@@ -192,6 +195,11 @@ class FunAchievements(plugins.Plugin):
             self.update_title()
 
         self.save_to_json()
+
+        # Add status message
+        status_message = f"Handshake adventure in progress! Current count: {self.handshake_count}/{self.daily_quest_target}"
+        self.show_status_message(status_message)
+
 
     def on_packet_party(self, agent, party_count):
         if self.current_adventure == AdventureType.PACKET_PARTY:
@@ -394,7 +402,18 @@ class FunAchievements(plugins.Plugin):
         logging.info("[FunAchievements] Your Pwnagotchi gains a new special ability!")
 
         # Define a list of possible abilities (customize as needed)
-        abilities = ["Fireball Attack", "Invisibility Cloak", "Teleportation", "Data Shield"]
+        abilities = [
+            "Electric Surge",
+            "Mind Control",
+            "Time Warp",
+            "Shadow Walk",
+            "Gravity Manipulation",
+            "Energy Absorption",
+            "Telepathic Communication",
+            "Molecular Reconstruction",
+            "Illusion Casting",
+            "Technomancy"
+        ]
 
         # Randomly assign a new ability to the Pwnagotchi
         new_ability = random.choice(abilities)
@@ -489,10 +508,53 @@ class FunAchievements(plugins.Plugin):
 
             if self.is_adventure_completed():
                 self.fun_achievement_count += 1
+
+                # Change the adventure to the next one
                 self.current_adventure = self.choose_random_adventure()
 
-        # Save changes to JSON after updating data
-        self.save_to_json()
+                # Increase the difficulty for the new adventure
+                self.increase_adventure_difficulty()
+
+                # Show a status message indicating the new adventure
+                status_message = f"New adventure started: {self.current_adventure}! Difficulty increased."
+                self.show_status_message(status_message)
+
+            # Save changes to JSON after updating data
+            self.save_to_json()
+
+    def increase_adventure_difficulty(self):
+        difficulty_multiplier = {
+            AdventureType.HANDSHAKE: 1.1,
+            AdventureType.NEW_NETWORK: 1.2,
+            AdventureType.PACKET_PARTY: 1.5,
+            AdventureType.PIXEL_PARADE: 1.3,
+            AdventureType.DATA_DAZZLE: 1.4,
+            AdventureType.SPEEDY_SCAN: 1.2
+        }
+
+        # Increase the difficulty multiplier for the current adventure
+        multiplier = difficulty_multiplier.get(self.current_adventure, 1.0)
+        self.daily_quest_target = max(int(self.daily_quest_target * multiplier), 1)
+
+        # Log the updated difficulty
+        logging.info(f"[FunAchievements] Difficulty increased for {self.current_adventure}. New daily quest target: {self.daily_quest_target}")
+
+    def show_status_message(self, ui, message):
+        try:
+            # Check if the 'statusMessage' UI element already exists
+            if 'statusMessage' in ui.elements:
+                # Update the existing 'statusMessage' element with the new message
+                ui.get('statusMessage').set_value(message)
+            else:
+                # Add a new 'statusMessage' UI element to display the status message
+                ui.add_element('statusMessage', LabeledValue(color=BLACK, label="Status:  ", value=message, position=(0, 110), label_font=fonts.Small, text_font=fonts.Small))
+            
+            # Ensure to call ui.update() after modifying the UI to refresh the display
+            ui.update()
+            
+        except Exception as e:
+            logging.error(f"Error updating status message on UI: {e}")
+
 
     def on_unfiltered_ap_list(self, agent):
         self.new_networks_count += 1
@@ -517,11 +579,56 @@ class FunAchievements(plugins.Plugin):
 
     def connect_to_wifi(self, ssid, password):
         try:
+            # List available Wi-Fi interfaces
+            result = subprocess.run(['iw', 'dev'], capture_output=True, text=True, check=True)
+            interfaces = re.findall(r'Interface (\w+)', result.stdout)
 
-            #using wpa_supplicant:
-            subprocess.run(['wpa_supplicant', '-B', '-i', 'your_wifi_interface', '-c', f'/etc/wpa_supplicant/wpa_supplicant.conf', '-D', 'nl80211,wext'])
-        except Exception as e:
+            # Choose the interface with the strongest signal for the specified network
+            best_interface = self.choose_best_wifi_interface(ssid, interfaces)
+
+            if best_interface:
+                # using wpa_supplicant:
+                subprocess.run(['wpa_supplicant', '-B', '-i', best_interface, '-c', '/etc/wpa_supplicant/wpa_supplicant.conf', '-D', 'nl80211,wext'], check=True)
+
+                # Add a sleep to allow time for the connection to be established before proceeding
+                import time
+                time.sleep(5)
+
+                # Bring up the interface
+                subprocess.run(['ifconfig', best_interface, 'up'], check=True)
+
+                # Connect to the specified Wi-Fi network with the provided password
+                subprocess.run(['wpa_cli', '-i', best_interface, 'add_network'], check=True)
+                subprocess.run(['wpa_cli', '-i', best_interface, 'set_network', '0', 'ssid', f'"{ssid}"'], check=True)
+                subprocess.run(['wpa_cli', '-i', best_interface, 'set_network', '0', 'psk', f'"{password}"'], check=True)
+                subprocess.run(['wpa_cli', '-i', best_interface, 'enable_network', '0'], check=True)
+                subprocess.run(['wpa_cli', '-i', best_interface, 'reassociate'], check=True)
+            else:
+                logging.info(f"No suitable Wi-Fi interface found for network: {ssid}")
+
+        except subprocess.CalledProcessError as e:
             logging.error(f"Error connecting to WiFi: {e}")
+        except Exception as e:
+            logging.error(f"Unexpected error connecting to WiFi: {e}")
+
+    def choose_best_wifi_interface(self, ssid, interfaces):
+        # Choose the Wi-Fi interface with the strongest signal for the specified network
+        best_interface = None
+        best_signal_strength = -100  # Initialize with a weak signal strength
+
+        for interface in interfaces:
+            result = subprocess.run(['iw', 'dev', interface, 'link'], capture_output=True, text=True)
+            signal_strength_match = re.search(r'signal: (-\d+) dBm', result.stdout)
+
+            if signal_strength_match:
+                signal_strength = int(signal_strength_match.group(1))
+                
+                # Check if the network is available on this interface and signal strength is stronger
+                if ssid in result.stdout and signal_strength > best_signal_strength:
+                    best_signal_strength = signal_strength
+                    best_interface = interface
+
+        return best_interface
 
     def check_treasure_chest(self):
         if random.random() < 0.1:  # 10% chance to find a treasure chest
