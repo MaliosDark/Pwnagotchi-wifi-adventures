@@ -10,6 +10,7 @@
 #By using this software, you acknowledge that the author is not liable for any consequences resulting from its misuse.
 #If you have any concerns or questions regarding the ethical use of this plugin, please contact the author for guidance.
 
+#Need to Install ( pip install requests )
 
 import logging
 import os
@@ -23,6 +24,8 @@ import datetime
 import json
 import random
 import re
+import requests
+
 
 
 class AdventureType:
@@ -35,7 +38,7 @@ class AdventureType:
 
 class FunAchievements(plugins.Plugin):
     __author__ = 'https://github.com/MaliosDark/'
-    __version__ = '1.3.7'
+    __version__ = '1.3.8'
     __license__ = 'GPL3'
     __description__ = 'Taking Pwnagotchi on WiFi adventures and collect fun achievements.'
     __defaults__ = {
@@ -174,6 +177,24 @@ class FunAchievements(plugins.Plugin):
         with open(self.data_path, 'w') as file:
             json.dump(data, file)
 
+    def send_adventure_states_to_server(self, adventure, status):
+        # Cambia la URL a la de tu servidor
+        server_url = "http://192.168.68.16:5000/get-adventure-state/{}".format(adventure)
+        
+        payload = {
+            "adventure": adventure,
+            "status": status
+        }
+
+        try:
+            response = requests.post(server_url, json=payload)
+            response.raise_for_status()
+            logging.info(f"Estado de la aventura enviado al servidor: {response.text}")
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error al enviar estado de la aventura al servidor: {e}")
+
+
+
     def on_handshake(self, agent, filename, access_point, client_station):
         logging.info(f"[FunAchievements] on_handshake - Current Adventure: {self.current_adventure}, Handshake Count: {self.handshake_count}")
         
@@ -193,6 +214,9 @@ class FunAchievements(plugins.Plugin):
         if self.is_adventure_completed():
             self.fun_achievement_count += 1
             self.update_title()
+
+            # Enviar estado de la aventura al servidor
+            self.send_adventure_states_to_server(self.current_adventure, "Completed")
 
         self.save_to_json()
 
