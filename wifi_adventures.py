@@ -14,6 +14,7 @@
 import logging
 import os
 import subprocess
+from threading import Timer
 from pwnagotchi.ui.components import LabeledValue
 from pwnagotchi.ui.view import BLACK
 import pwnagotchi.ui.fonts as fonts
@@ -28,10 +29,11 @@ class AdventureType:
     PACKET_PARTY = "packet_party"
     PIXEL_PARADE = "pixel_parade"
     DATA_DAZZLE = "data_dazzle"
+    SPEEDY_SCAN = "speedy_scan"
 
 class FunAchievements(plugins.Plugin):
     __author__ = 'https://github.com/MaliosDark/'
-    __version__ = '1.3.5'
+    __version__ = '1.3.6'
     __license__ = 'GPL3'
     __description__ = 'Taking Pwnagotchi on WiFi adventures and collect fun achievements.'
     __defaults__ = {
@@ -62,6 +64,8 @@ class FunAchievements(plugins.Plugin):
             return "Pixel Parade:  "
         elif self.current_adventure == AdventureType.DATA_DAZZLE:
             return "Data Dazzle:  "
+        elif self.current_adventure == AdventureType.SPEEDY_SCAN:
+            return "Speedy Scan:  "
         else:
             return "Mysterious Quest:  "
 
@@ -84,7 +88,7 @@ class FunAchievements(plugins.Plugin):
 
     @staticmethod
     def choose_random_adventure():
-        return random.choice([AdventureType.HANDSHAKE, AdventureType.NEW_NETWORK, AdventureType.PACKET_PARTY, AdventureType.PIXEL_PARADE, AdventureType.DATA_DAZZLE])
+        return random.choice([AdventureType.HANDSHAKE, AdventureType.NEW_NETWORK, AdventureType.PACKET_PARTY, AdventureType.PIXEL_PARADE, AdventureType.DATA_DAZZLE, AdventureType.SPEEDY_SCAN])
 
     def on_loaded(self):
         logging.info("[FunAchievements] plugin loaded")
@@ -194,17 +198,103 @@ class FunAchievements(plugins.Plugin):
             self.packet_party_count += party_count
             self.check_and_update_daily_quest_target()
             self.check_treasure_chest()
-            
+
             # Check if the current adventure is Packet Party
             if self.current_adventure == AdventureType.PACKET_PARTY:
-                # Get the SSID from the current packet
-                ssid = agent.get('ssid')
-                
-                # Check if SSID is available
-                if ssid:
-                    password = self.get_password_from_potfile(ssid)
-                    if password:
-                        self.connect_to_wifi(ssid, password)
+                # Simulate the capture of different types of packets during the party
+                for _ in range(party_count):
+                    captured_packet_type = random.choice(["Data Packet", "Control Packet", "Management Packet"])
+
+                    # Process the captured packet based on its type
+                    self.process_captured_packet(captured_packet_type)
+
+        self.save_to_json()
+
+    def process_captured_packet(self, packet_type):
+        # Logic for processing a captured packet during the Packet Party
+        logging.info(f"[FunAchievements] Captured a {packet_type} during the Packet Party!")
+
+        # Determine the effects or challenges based on the captured packet type
+        if packet_type == "Data Packet":
+            # Example: Gain experience points for capturing data packets
+            self.gain_experience(10)
+        elif packet_type == "Control Packet":
+            # Example: Temporarily boost Pwnagotchi's speed for control packets
+            self.temporarily_boost_speed()
+        elif packet_type == "Management Packet":
+            # Example: Encounter a challenge or puzzle related to management packets
+            self.encounter_management_challenge()
+
+    def gain_experience(self, experience_points):
+        # Logic for gaining experience points
+        logging.info(f"[FunAchievements] Gained {experience_points} experience points!")
+
+        # Update Pwnagotchi's experience points attribute (assuming it exists)
+        self.experience_points += experience_points
+
+    def temporarily_boost_speed(self):
+        # Logic for temporarily boosting Pwnagotchi's speed
+        logging.info("[FunAchievements] Pwnagotchi's speed is temporarily boosted!")
+
+        # Increase speed attribute for a short duration
+        self.speed += 5  # adjust as needed
+
+        # Schedule the end of the speed boost after a specified duration (e.g., 60 seconds)
+        Timer(60, self.end_speed_boost).start()
+
+    def end_speed_boost(self):
+        # Logic for ending the temporary speed boost
+        logging.info("[FunAchievements] Temporary speed boost has ended.")
+
+        # Reset the boosted speed attribute to its original value
+        self.speed -= 5  # adjust as needed
+
+    def encounter_management_challenge(self):
+        # Logic for encountering a challenge or puzzle related to management packets
+        logging.info("[FunAchievements] Encountered a management packet challenge!")
+
+        # Implement a challenge or puzzle scenario
+        # For example, prompt the player to solve a puzzle or answer a question related to networking concepts.
+        # You can use input() to get user responses and determine the outcome.
+
+        # Example:
+        user_response = input("[FunAchievements] Solve the puzzle: What is the purpose of a management packet? ")
+
+        if user_response.lower() == "network_management":
+            logging.info("[FunAchievements] Puzzle solved! Gain a reward.")
+            self.gain_reward()
+        else:
+            logging.info("[FunAchievements] Incorrect answer. Face a consequence.")
+            self.face_consequence()
+
+    def gain_reward(self):
+        # Logic for gaining a reward after successfully solving a challenge
+        logging.info("[FunAchievements] Congratulations! You've earned a reward.")
+
+        # Determine and apply the reward (e.g., gain virtual coins, unlock an achievement, etc.)
+        self.virtual_coins += 20
+        self.unlock_achievement("Packet Party Master")
+
+    def face_consequence(self):
+        # Logic for facing a consequence after an incorrect answer
+        logging.info("[FunAchievements] Oh no! Incorrect answer comes with consequences.")
+
+        # Determine and apply the consequence (e.g., decrease virtual coins, face a setback, etc.)
+        self.virtual_coins -= 10
+
+
+    def on_speedy_scan(self, agent):
+        # Lógica para la aventura Speedy Scan
+        scan_duration = 30  # segundos
+        packets_captured = random.randint(10, 50)  # ejemplo de paquetes capturados
+        self.packet_party_count += packets_captured
+
+        self.check_and_update_daily_quest_target()
+        self.check_treasure_chest()
+
+        if self.is_adventure_completed():
+            self.fun_achievement_count += 1
+            self.update_title()
 
         self.save_to_json()
 
@@ -213,14 +303,151 @@ class FunAchievements(plugins.Plugin):
             self.pixel_parade_count += pixel_count
             self.check_and_update_daily_quest_target()
             self.check_treasure_chest()
+
+            # Set a threshold for the special event (adjust as needed)
+            special_event_threshold = 100
+
+            # Check if the threshold for the special event is reached
+            if self.pixel_parade_count >= special_event_threshold:
+                self.trigger_special_pixel_event()
+
         self.save_to_json()
+
+    def trigger_special_pixel_event(self):
+        # Logic for the special Pixel Parade event
+        logging.info("[FunAchievements] Special Pixel Parade event reached!")
+
+        # Determine the type of special event based on random chance
+        special_event_type = random.choice(["Treasure Hunt", "Stat Boost", "New Ability"])
+
+        # Execute actions based on the type of special event
+        if special_event_type == "Treasure Hunt":
+            logging.info("[FunAchievements] You've triggered a Treasure Hunt! Search for hidden treasures.")
+            self.start_treasure_hunt()
+        elif special_event_type == "Stat Boost":
+            logging.info("[FunAchievements] Your Pwnagotchi receives a temporary stat boost!")
+            self.boost_pwnagotchi_stats()
+        elif special_event_type == "New Ability":
+            logging.info("[FunAchievements] Your Pwnagotchi gains a new special ability!")
+            self.give_new_ability()
+
+        # Reset the Pixel Parade count
+        self.pixel_parade_count = 0
+
+    def start_treasure_hunt(self):
+        # Logic for starting a treasure hunt
+        logging.info("[FunAchievements] Welcome to the Treasure Hunt!")
+
+        # Generate a random number of hidden treasures (adjust as needed)
+        num_hidden_treasures = random.randint(3, 8)
+
+        # Initialize the player's progress
+        treasures_found = 0
+
+        # Loop until the player finds all treasures or decides to end the hunt
+        while treasures_found < num_hidden_treasures:
+            # Present clues or prompts to guide the player
+            user_input = input("[FunAchievements] Clue: Enter 'hunt' to search for treasure or 'end' to end the hunt: ")
+
+            if user_input.lower() == 'hunt':
+                # Player chooses to search for treasure
+                if random.random() < 0.4:  # 40% chance of finding a treasure
+                    logging.info("[FunAchievements] You found a hidden treasure!")
+                    treasures_found += 1
+                else:
+                    logging.info("[FunAchievements] No treasure found this time.")
+
+            elif user_input.lower() == 'end':
+                # Player chooses to end the treasure hunt
+                break
+
+        logging.info(f"[FunAchievements] Treasure Hunt ended. You found {treasures_found} treasures!")
+
+    def boost_pwnagotchi_stats(self):
+        # Logic for boosting Pwnagotchi stats
+        logging.info("[FunAchievements] Your Pwnagotchi receives a temporary stat boost!")
+
+        # Increase relevant attributes for a limited time (adjust values as needed)
+        boost_duration = 120  # seconds
+        boost_amount = 2  # arbitrary boost factor
+
+        # Apply the stat boost
+        self.speed += boost_amount
+        self.intelligence += boost_amount
+        self.luck += boost_amount
+
+        # Schedule the end of the boost after the specified duration
+        Timer(boost_duration, self.end_stat_boost, args=(boost_amount,)).start()
+
+    def end_stat_boost(self, boost_amount):
+        # Logic for ending the temporary stat boost
+        logging.info("[FunAchievements] Temporary stat boost has ended.")
+        
+        # Reset boosted attributes to their original values
+        self.speed -= boost_amount
+        self.intelligence -= boost_amount
+        self.luck -= boost_amount
+
+
+    def give_new_ability(self):
+        # Logic for giving the Pwnagotchi a new special ability
+        logging.info("[FunAchievements] Your Pwnagotchi gains a new special ability!")
+
+        # Define a list of possible abilities (customize as needed)
+        abilities = ["Fireball Attack", "Invisibility Cloak", "Teleportation", "Data Shield"]
+
+        # Randomly assign a new ability to the Pwnagotchi
+        new_ability = random.choice(abilities)
+
+        logging.info(f"[FunAchievements] New Ability: {new_ability}")
+
+        # Add the new ability to the Pwnagotchi's list of abilities (assuming you have such a list)
+        self.abilities.append(new_ability)
+
 
     def on_data_dazzle(self, agent, dazzle_count):
         if self.current_adventure == AdventureType.DATA_DAZZLE:
             self.data_dazzle_count += dazzle_count
             self.check_and_update_daily_quest_target()
             self.check_treasure_chest()
+
+            # Set a threshold for the special event (adjust as needed)
+            special_event_threshold = 50
+
+            # Check if the threshold for the special event is reached
+            if self.data_dazzle_count >= special_event_threshold:
+                self.trigger_special_data_dazzle_event()
+
         self.save_to_json()
+
+    def trigger_special_data_dazzle_event(self):
+        # Logic for the special Data Dazzle event
+        logging.info("[FunAchievements] Special Data Dazzle event reached!")
+
+        # Offer the player options for data to dazzle
+        data_options = ["Email", "Password", "Credit Card Number", "Secret Message"]
+        
+        # Randomly choose a data type to dazzle
+        chosen_data = random.choice(data_options)
+        logging.info(f"[FunAchievements] Dazzle: {chosen_data}")
+
+        # Depending on the chosen data type, grant different rewards or present challenges to the player
+        if chosen_data == "Email":
+            # Example: Unlock a new achievement related to cybersecurity
+            self.fun_achievement_count += 1
+            self.update_title()
+        elif chosen_data == "Password":
+            # Example: Increase the Pwnagotchi's security level
+            self.security_level += 1
+        elif chosen_data == "Credit Card Number":
+            # Example: Grant virtual coins to the player
+            self.virtual_coins += 10
+        elif chosen_data == "Secret Message":
+            # Example: Present a special message or challenge to the player
+            logging.info("[FunAchievements] Decode the secret message for an additional reward!")
+
+        # Reset the Data Dazzle count
+        self.data_dazzle_count = 0
 
     def is_adventure_completed(self):
         if self.current_adventure == AdventureType.HANDSHAKE:
